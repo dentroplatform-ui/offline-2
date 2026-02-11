@@ -6,11 +6,11 @@ export const generateId = (): string => {
 // This handles the proper shaping and ordering for PDF rendering
 export const processArabicText = (text: string): string => {
   if (!text) return '';
-  
+
   // Check if text contains Arabic characters
   const hasArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(text);
   if (!hasArabic) return text;
-  
+
   // Character forms: [isolated, initial, medial, final]
   const arabicForms: Record<string, string[]> = {
     'ا': ['ﺍ', 'ﺍ', 'ﺎ', 'ﺎ'],
@@ -69,7 +69,7 @@ export const processArabicText = (text: string): string => {
 
   // Characters that don't connect to the next letter
   const nonJoinersRight = new Set(['ا', 'أ', 'إ', 'آ', 'د', 'ذ', 'ر', 'ز', 'و', 'ؤ', 'ة', 'ء', 'ى', 'ژ', 'ۆ', 'ڕ']);
-  
+
   const isArabicChar = (char: string) => arabicForms[char] !== undefined;
   const canJoinRight = (char: string) => isArabicChar(char) && !nonJoinersRight.has(char);
 
@@ -78,7 +78,7 @@ export const processArabicText = (text: string): string => {
 
   for (let i = 0; i < chars.length; i++) {
     const char = chars[i];
-    
+
     // Check for Lam-Alef combinations
     if (char === 'ل' && chars[i + 1]) {
       const next = chars[i + 1];
@@ -92,7 +92,7 @@ export const processArabicText = (text: string): string => {
         continue;
       }
     }
-    
+
     const forms = arabicForms[char];
 
     if (!forms) {
@@ -102,7 +102,7 @@ export const processArabicText = (text: string): string => {
 
     const prevChar = chars[i - 1];
     const nextChar = chars[i + 1];
-    
+
     const prevCanJoin = prevChar && canJoinRight(prevChar);
     const nextIsArabic = nextChar && isArabicChar(nextChar);
 
@@ -126,13 +126,13 @@ export const processArabicText = (text: string): string => {
 // Process mixed text (Arabic and Latin) for PDF
 export const processMixedText = (text: string): { segments: Array<{ text: string; isRTL: boolean }> } => {
   if (!text) return { segments: [] };
-  
+
   const segments: Array<{ text: string; isRTL: boolean }> = [];
   const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g;
-  
+
   let lastIndex = 0;
   let match;
-  
+
   while ((match = arabicRegex.exec(text)) !== null) {
     // Add non-Arabic text before this match
     if (match.index > lastIndex) {
@@ -141,12 +141,12 @@ export const processMixedText = (text: string): { segments: Array<{ text: string
         segments.push({ text: latinText, isRTL: false });
       }
     }
-    
+
     // Add Arabic text
     segments.push({ text: match[0], isRTL: true });
     lastIndex = match.index + match[0].length;
   }
-  
+
   // Add remaining non-Arabic text
   if (lastIndex < text.length) {
     const remaining = text.slice(lastIndex);
@@ -154,6 +154,6 @@ export const processMixedText = (text: string): { segments: Array<{ text: string
       segments.push({ text: remaining, isRTL: false });
     }
   }
-  
+
   return { segments };
 };

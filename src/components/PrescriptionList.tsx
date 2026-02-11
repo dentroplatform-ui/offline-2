@@ -3,22 +3,24 @@ import { FileText, Trash2, Printer, Search, Calendar, User, Pill, AlertCircle, L
 import { translations } from '../i18n';
 import { Language, Prescription, AppData } from '../types';
 import { generateRxPdf } from '../utils/pdfGenerator';
+import { Theme } from '../hooks/useTheme';
 
 interface PrescriptionListProps {
   language: Language;
   prescriptions: Prescription[];
   appData: AppData;
   onDelete: (id: string) => void;
+  currentTheme?: Theme;
 }
 
-export function PrescriptionList({ language, prescriptions, appData, onDelete }: PrescriptionListProps) {
+export function PrescriptionList({ language, prescriptions, appData, onDelete, currentTheme }: PrescriptionListProps) {
   const t = translations[language];
   const isRTL = language === 'ar' || language === 'ku';
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [printingId, setPrintingId] = useState<string | null>(null);
 
-  const filteredPrescriptions = prescriptions.filter(rx => 
+  const filteredPrescriptions = prescriptions.filter(rx =>
     rx.patientName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -68,20 +70,30 @@ export function PrescriptionList({ language, prescriptions, appData, onDelete }:
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleDateString(language === 'en' ? 'en-GB' : 'ar-EG', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    return d.toLocaleDateString(language === 'en' ? 'en-GB' : 'ar-EG', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
     });
   };
 
+  const themeColors = currentTheme?.colors;
+
   const PrescriptionCard = ({ rx }: { rx: Prescription }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow group">
+    <div 
+      className="rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group"
+      style={{
+        backgroundColor: themeColors ? 'var(--theme-surface)' : undefined,
+        borderColor: themeColors ? 'var(--theme-border)' : undefined,
+        borderWidth: '1px',
+        borderStyle: 'solid',
+      }}
+    >
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <User size={16} className="text-indigo-500 shrink-0" />
+              <User size={16} className="shrink-0" style={{ color: themeColors?.primary || '#6366f1' }} />
               <h3 className="font-bold text-gray-800 dark:text-white truncate">{rx.patientName}</h3>
             </div>
             <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -98,7 +110,8 @@ export function PrescriptionList({ language, prescriptions, appData, onDelete }:
             <button
               onClick={() => handlePrint(rx)}
               disabled={printingId === rx.id}
-              className="p-2.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-colors disabled:opacity-50"
+              className="p-2.5 rounded-xl transition-colors disabled:opacity-50"
+              style={{ color: themeColors?.primary || '#4f46e5' }}
               title={t.print}
             >
               {printingId === rx.id ? (
@@ -110,8 +123,8 @@ export function PrescriptionList({ language, prescriptions, appData, onDelete }:
             <button
               onClick={() => handleDelete(rx.id)}
               className={`p-2.5 rounded-xl transition-all ${
-                confirmDeleteId === rx.id 
-                  ? 'bg-red-500 text-white' 
+                confirmDeleteId === rx.id
+                  ? 'bg-red-500 text-white'
                   : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30'
               }`}
               title={confirmDeleteId === rx.id ? t.confirmDelete : t.delete}
@@ -130,7 +143,14 @@ export function PrescriptionList({ language, prescriptions, appData, onDelete }:
           </div>
           <div className="flex flex-wrap gap-1.5">
             {rx.medications.slice(0, 4).map((med, i) => (
-              <span key={i} className="inline-flex items-center px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-bold">
+              <span 
+                key={i} 
+                className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold"
+                style={{ 
+                  backgroundColor: themeColors?.primaryLight || '#eef2ff',
+                  color: themeColors?.primary || '#4338ca',
+                }}
+              >
                 {med.name}
               </span>
             ))}
@@ -148,7 +168,7 @@ export function PrescriptionList({ language, prescriptions, appData, onDelete }:
   const Section = ({ title, items }: { title: string; items: Prescription[] }) => {
     if (items.length === 0) return null;
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 px-1">
           <Calendar size={14} />
           {title}

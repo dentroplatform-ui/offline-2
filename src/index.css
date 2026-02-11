@@ -3,6 +3,23 @@
 /* Enable dark mode with class strategy for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Theme CSS Variables */
+:root {
+  --theme-primary: #4f46e5;
+  --theme-primary-hover: #4338ca;
+  --theme-primary-light: #eef2ff;
+  --theme-secondary: #7c3aed;
+  --theme-accent: #06b6d4;
+  --theme-background: #f8fafc;
+  --theme-background-dark: #0f172a;
+  --theme-surface: #ffffff;
+  --theme-surface-dark: #1e293b;
+  --theme-text: #1e293b;
+  --theme-text-dark: #f1f5f9;
+  --theme-border: #e2e8f0;
+  --theme-border-dark: #334155;
+}
+
 /* Fallback dark mode support */
 .dark {
   color-scheme: dark;

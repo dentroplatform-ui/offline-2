@@ -4,13 +4,17 @@ import { Header } from './components/Header';
 import { PrescriptionForm } from './components/PrescriptionForm';
 import { PrescriptionList } from './components/PrescriptionList';
 import { SettingsModal } from './components/SettingsModal';
+import { LoginPage } from './components/LoginPage';
+import { ExpiredSubscription } from './components/ExpiredSubscription';
 import { useApp } from './hooks/useApp';
+import { useAuth } from './hooks/useAuth';
+import { useTheme } from './hooks/useTheme';
 import { translations } from './i18n';
 
 export function App() {
   const {
     data,
-    isLoading,
+    isLoading: isAppLoading,
     darkMode,
     toggleDarkMode,
     addPrescription,
@@ -23,6 +27,18 @@ export function App() {
     setLanguage,
   } = useApp();
 
+  const {
+    authState,
+    authData,
+    error: authError,
+    isLoggingIn,
+    login,
+    logout,
+    refreshSubscription,
+  } = useAuth();
+
+  const { currentTheme, setTheme } = useTheme();
+
   const [showNewPrescription, setShowNewPrescription] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -32,6 +48,13 @@ export function App() {
 
   const t = translations[data.settings.language];
   const isRTL = data.settings.language === 'ar' || data.settings.language === 'ku';
+
+  // Apply theme colors to CSS variables
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--theme-primary', currentTheme.colors.primary);
+    root.style.setProperty('--theme-secondary', currentTheme.colors.secondary);
+  }, [currentTheme]);
 
   // PWA install prompt
   useEffect(() => {
@@ -72,14 +95,12 @@ export function App() {
         .then((registration) => {
           console.log('Service Worker registered:', registration);
           setSwRegistered(true);
-          
-          // Check for updates
+
           registration.addEventListener('updatefound', () => {
             const newWorker = registration.installing;
             if (newWorker) {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New version available
                   console.log('New version available');
                 }
               });
@@ -95,12 +116,11 @@ export function App() {
   // Pre-cache fonts when online
   useEffect(() => {
     if (isOnline && swRegistered) {
-      // Pre-fetch fonts for offline use
       const fontUrls = [
         'https://raw.githubusercontent.com/google/fonts/main/ofl/tajawal/Tajawal-Regular.ttf',
         'https://raw.githubusercontent.com/google/fonts/main/ofl/tajawal/Tajawal-Bold.ttf',
       ];
-      
+
       fontUrls.forEach(url => {
         fetch(url, { mode: 'cors' })
           .then(response => {
@@ -122,9 +142,10 @@ export function App() {
     }
   };
 
-  if (isLoading) {
+  // Show loading while checking auth
+  if (authState === 'loading' || isAppLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className={`min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-gray-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 ${isRTL ? 'font-cairo' : 'font-inter'}`}>
         <div className="text-center">
           <Loader2 size={48} className="animate-spin text-indigo-600 mx-auto mb-4" />
           <p className="text-gray-500 font-bold">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
@@ -133,10 +154,41 @@ export function App() {
     );
   }
 
+  // Show login page
+  if (authState === 'login') {
+    return (
+      <LoginPage
+        onLogin={login}
+        isLoading={isLoggingIn}
+        error={authError}
+        language={data.settings.language}
+      />
+    );
+  }
+
+  // Show expired subscription
+  if (authState === 'expired') {
+    return (
+      <ExpiredSubscription
+        userEmail={authData?.userEmail || ''}
+        expiresAt={authData?.expiresAt || ''}
+        onLogout={logout}
+        onRefresh={refreshSubscription}
+        language={data.settings.language}
+      />
+    );
+  }
+
+  // Main app (authenticated)
   return (
-    <div 
-      className={`min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 ${isRTL ? 'font-cairo' : 'font-inter'}`}
+    <div
+      className={`min-h-screen ${isRTL ? 'font-cairo' : 'font-inter'}`}
       dir={isRTL ? 'rtl' : 'ltr'}
+      style={{
+        background: darkMode 
+          ? `linear-gradient(135deg, ${currentTheme.colors.backgroundDark}, ${currentTheme.colors.surfaceDark})`
+          : `linear-gradient(135deg, ${currentTheme.colors.background}, ${currentTheme.colors.primaryLight})`,
+      }}
     >
       <Header
         language={data.settings.language}
@@ -145,6 +197,7 @@ export function App() {
         onOpenSettings={() => setShowSettings(true)}
         installPrompt={installPrompt}
         onInstall={handleInstall}
+        currentTheme={currentTheme}
       />
 
       {/* Offline Notice */}
@@ -158,8 +211,8 @@ export function App() {
       {/* Online/Offline indicator */}
       <div className={`fixed bottom-4 ${isRTL ? 'left-4' : 'right-4'} z-40`}>
         <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold shadow-lg ${
-          isOnline 
-            ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' 
+          isOnline
+            ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
             : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
         }`}>
           {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
@@ -175,7 +228,7 @@ export function App() {
         {/* Title Section */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
-            <FileText className="text-indigo-600" />
+            <FileText className="text-indigo-600" style={{ color: currentTheme.colors.primary }} />
             {t.prescriptionHistory}
           </h2>
           <p className="text-gray-500 text-sm mt-1">
@@ -188,13 +241,18 @@ export function App() {
           prescriptions={data.prescriptions}
           appData={data}
           onDelete={deletePrescription}
+          currentTheme={currentTheme}
         />
       </main>
 
       {/* FAB */}
       <button
         onClick={() => setShowNewPrescription(true)}
-        className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl shadow-2xl shadow-indigo-500/40 hover:shadow-indigo-500/60 transition-all duration-300 flex items-center gap-3 font-bold text-lg hover:-translate-y-1 active:scale-95"
+        className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 text-white px-8 py-4 rounded-2xl shadow-2xl transition-all duration-300 flex items-center gap-3 font-bold text-lg hover:-translate-y-1 active:scale-95"
+        style={{
+          background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
+          boxShadow: `0 10px 40px ${currentTheme.colors.primary}40`,
+        }}
       >
         <Plus size={24} />
         {t.newPrescription}
@@ -229,17 +287,20 @@ export function App() {
         onDeleteCategory={deleteCategory}
         onSetLanguage={setLanguage}
         onRestorePrescriptions={async (prescriptions) => {
-          // Add restored prescriptions
           for (const rx of prescriptions) {
             await addPrescription(rx);
           }
         }}
         onClearPrescriptions={async () => {
-          // Clear all prescriptions
           for (const rx of data.prescriptions) {
             await deletePrescription(rx.id);
           }
         }}
+        subscriptionExpiresAt={authData?.expiresAt}
+        userEmail={authData?.userEmail}
+        onLogout={logout}
+        currentThemeId={currentTheme.id}
+        onSetTheme={setTheme}
       />
     </div>
   );

@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Search, Edit2, LayoutGrid, Folder, ArrowLeft, PlusCirc
 import { translations } from '../i18n';
 import { Language, Medication, MedicationCategory, Prescription } from '../types';
 import { generateId } from '../utils/helpers';
+import { Theme } from '../hooks/useTheme';
 
 interface PrescriptionFormProps {
   language: Language;
@@ -10,6 +11,7 @@ interface PrescriptionFormProps {
   categories: MedicationCategory[];
   onSave: (prescription: Prescription) => Promise<void>;
   onCancel: () => void;
+  currentTheme?: Theme;
 }
 
 export function PrescriptionForm({
@@ -18,10 +20,12 @@ export function PrescriptionForm({
   categories,
   onSave,
   onCancel,
+  currentTheme,
 }: PrescriptionFormProps) {
   const t = translations[language];
   const isRTL = language === 'ar' || language === 'ku';
-  
+  const themeColors = currentTheme?.colors;
+
   const [patientName, setPatientName] = useState('');
   const [patientAge, setPatientAge] = useState('');
   const [addedMeds, setAddedMeds] = useState<Medication[]>([]);
@@ -49,7 +53,7 @@ export function PrescriptionForm({
 
   const handleSave = async () => {
     if (!patientName.trim() || addedMeds.length === 0) return;
-    
+
     setIsSaving(true);
     try {
       const prescription: Prescription = {
@@ -67,8 +71,8 @@ export function PrescriptionForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm animate-fade-in">
-      <div 
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div
         className={`bg-white dark:bg-gray-900 w-full max-w-5xl rounded-2xl sm:rounded-[2rem] shadow-2xl flex flex-col lg:flex-row h-[95vh] sm:h-[90vh] overflow-hidden ${isRTL ? 'font-cairo' : 'font-inter'}`}
         dir={isRTL ? 'rtl' : 'ltr'}
       >
@@ -84,8 +88,8 @@ export function PrescriptionForm({
                 <h3 className="text-base sm:text-lg font-bold">{t.newPrescription}</h3>
               </div>
             </div>
-            <button 
-              onClick={onCancel} 
+            <button
+              onClick={onCancel}
               disabled={isSaving}
               className="p-1.5 sm:p-2 hover:bg-white/10 rounded-full transition-all"
             >
@@ -134,9 +138,9 @@ export function PrescriptionForm({
                 <div className="absolute top-full left-0 right-0 z-[160] mt-1 bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 max-h-48 sm:max-h-56 overflow-y-auto">
                   {filteredMedsForSearch.length > 0 ? (
                     filteredMedsForSearch.map(med => (
-                      <button 
-                        key={med.id} 
-                        onClick={() => handleAddFromSearch(med)} 
+                      <button
+                        key={med.id}
+                        onClick={() => handleAddFromSearch(med)}
                         className="w-full text-start p-3 sm:p-4 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border-b last:border-0 border-gray-50 dark:border-gray-700 flex items-center justify-between group transition-all"
                       >
                         <div>
@@ -176,50 +180,50 @@ export function PrescriptionForm({
                   <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div className="col-span-2 sm:col-span-1 space-y-1">
                       <label className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase">{t.drugName} *</label>
-                      <input 
-                        value={medForm.name} 
-                        onChange={e => setMedForm({...medForm, name: e.target.value})} 
-                        className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-bold text-sm shadow-sm" 
-                        placeholder={t.drugName} 
+                      <input
+                        value={medForm.name}
+                        onChange={e => setMedForm({ ...medForm, name: e.target.value })}
+                        className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-bold text-sm shadow-sm"
+                        placeholder={t.drugName}
                       />
                     </div>
                     <div className="col-span-2 sm:col-span-1 space-y-1">
                       <label className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase">{t.dose}</label>
-                      <input 
-                        value={medForm.dose} 
-                        onChange={e => setMedForm({...medForm, dose: e.target.value})} 
-                        className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-bold text-sm shadow-sm text-end" 
-                        dir="ltr" 
-                        placeholder="500mg" 
+                      <input
+                        value={medForm.dose}
+                        onChange={e => setMedForm({ ...medForm, dose: e.target.value })}
+                        className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-bold text-sm shadow-sm text-end"
+                        dir="ltr"
+                        placeholder="500mg"
                       />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase">{t.form}</label>
-                      <input 
-                        value={medForm.form} 
-                        onChange={e => setMedForm({...medForm, form: e.target.value})} 
-                        className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-bold text-sm shadow-sm" 
-                        placeholder="Tab, Cap..." 
+                      <input
+                        value={medForm.form}
+                        onChange={e => setMedForm({ ...medForm, form: e.target.value })}
+                        className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-bold text-sm shadow-sm"
+                        placeholder="Tab, Cap..."
                       />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase">{t.frequency}</label>
-                      <input 
-                        value={medForm.frequency} 
-                        onChange={e => setMedForm({...medForm, frequency: e.target.value})} 
-                        className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-bold text-sm shadow-sm text-end" 
-                        dir="ltr" 
-                        placeholder="1 x 3" 
+                      <input
+                        value={medForm.frequency}
+                        onChange={e => setMedForm({ ...medForm, frequency: e.target.value })}
+                        className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-bold text-sm shadow-sm text-end"
+                        dir="ltr"
+                        placeholder="1 x 3"
                       />
                     </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase">{t.medNotes}</label>
-                    <input 
-                      value={medForm.notes} 
-                      onChange={e => setMedForm({...medForm, notes: e.target.value})} 
-                      className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-medium text-sm shadow-sm" 
-                      placeholder={t.medNotes} 
+                    <input
+                      value={medForm.notes}
+                      onChange={e => setMedForm({ ...medForm, notes: e.target.value })}
+                      className="w-full p-3 sm:p-3.5 rounded-lg sm:rounded-xl bg-white dark:bg-gray-700 border-2 border-transparent focus:border-indigo-500 outline-none font-medium text-sm shadow-sm"
+                      placeholder={t.medNotes}
                     />
                   </div>
                   <button
@@ -372,8 +376,8 @@ export function PrescriptionForm({
               </div>
             ) : (
               addedMeds.map((med, idx) => (
-                <div 
-                  key={med.id} 
+                <div
+                  key={med.id}
                   className="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow group"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -409,8 +413,8 @@ export function PrescriptionForm({
                         </p>
                       )}
                     </div>
-                    <button 
-                      onClick={() => setAddedMeds(addedMeds.filter((_, i) => i !== idx))} 
+                    <button
+                      onClick={() => setAddedMeds(addedMeds.filter((_, i) => i !== idx))}
                       className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-60 group-hover:opacity-100"
                     >
                       <Trash2 size={14} />

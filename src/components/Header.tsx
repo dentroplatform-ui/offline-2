@@ -1,6 +1,7 @@
 import { Pill, Settings, Moon, Sun, Download, Instagram } from 'lucide-react';
 import { translations } from '../i18n';
 import { Language } from '../types';
+import { Theme } from '../hooks/useTheme';
 
 interface HeaderProps {
   language: Language;
@@ -9,20 +10,18 @@ interface HeaderProps {
   onOpenSettings: () => void;
   installPrompt: any;
   onInstall: () => void;
+  currentTheme?: Theme;
 }
 
-export function Header({ 
-  language, 
-  darkMode, 
-  onToggleDarkMode, 
-  onOpenSettings,
-  installPrompt,
-  onInstall
-}: HeaderProps) {
+export function Header({ language, darkMode, onToggleDarkMode, onOpenSettings, installPrompt, onInstall, currentTheme }: HeaderProps) {
   const t = translations[language];
+  
+  const headerStyle = currentTheme ? {
+    background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
+  } : {};
 
   return (
-    <header className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 dark:from-indigo-800 dark:via-indigo-900 dark:to-purple-900 text-white shadow-xl sticky top-0 z-50">
+    <header className="text-white shadow-xl sticky top-0 z-50" style={headerStyle}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

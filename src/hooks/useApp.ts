@@ -50,7 +50,7 @@ export const useApp = () => {
   useEffect(() => {
     const root = document.documentElement;
     const body = document.body;
-    
+
     if (darkMode) {
       root.classList.add('dark');
       body.classList.add('dark');

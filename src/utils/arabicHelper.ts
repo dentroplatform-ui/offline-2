@@ -17,7 +17,7 @@ export const isArabicChar = (char: string): boolean => {
     (code >= 0x0750 && code <= 0x077F) || // Arabic Supplement
     (code >= 0x08A0 && code <= 0x08FF) || // Arabic Extended-A
     (code >= 0xFB50 && code <= 0xFDFF) || // Arabic Presentation Forms-A
-    (code >= 0xFE70 && code <= 0xFEFF)    // Arabic Presentation Forms-B
+    (code >= 0xFE70 && code <= 0xFEFF) // Arabic Presentation Forms-B
   );
 };
 
@@ -46,7 +46,7 @@ const isEnglish = (char: string): boolean => {
  * التحقق من أن الحرف محايد (رموز، مسافات، إلخ)
  */
 export const isNeutral = (char: string): boolean => {
-  return /[\s\-_.,;:!?()[\]{}'"\/\\@#$%^&*+=<>|~`]/.test(char);
+  return /[\s\-_.,;:!?()[\]{}'"/\\@#$%^&*+=<>|~`]/.test(char);
 };
 
 /**
@@ -63,19 +63,19 @@ const reverseString = (str: string): string => {
  */
 export const processArabicText = (text: string): string => {
   if (!text) return '';
-  
+
   // إذا لم يكن هناك نص عربي، أعده كما هو
   if (!containsArabic(text)) {
     return text;
   }
-  
+
   try {
     // 1. تشكيل الحروف العربية (تحويلها لشكلها المتصل)
     const reshaped = ArabicReshaper.reshape(text);
-    
+
     // 2. عكس النص بالكامل
     const reversed = reverseString(reshaped);
-    
+
     return reversed;
   } catch (error) {
     console.error('Error processing Arabic text:', error);
@@ -89,21 +89,21 @@ export const processArabicText = (text: string): string => {
  */
 export const processArabicMixedText = (text: string): string => {
   if (!text) return '';
-  
+
   // إذا لم يكن هناك نص عربي، أعده كما هو
   if (!containsArabic(text)) {
     return text;
   }
-  
+
   try {
     // تقسيم النص إلى أجزاء: عربي، إنجليزي، أرقام، ومحايد
     const segments: { text: string; type: 'arabic' | 'english' | 'number' | 'neutral' }[] = [];
     let currentSegment = '';
     let currentType: 'arabic' | 'english' | 'number' | 'neutral' = 'neutral';
-    
+
     for (const char of text) {
       let charType: 'arabic' | 'english' | 'number' | 'neutral';
-      
+
       if (isArabicChar(char)) {
         charType = 'arabic';
       } else if (isEnglish(char)) {
@@ -113,7 +113,7 @@ export const processArabicMixedText = (text: string): string => {
       } else {
         charType = 'neutral';
       }
-      
+
       // إذا كان النوع مختلفاً، احفظ الجزء السابق وابدأ جزءاً جديداً
       if (charType !== currentType && currentSegment !== '') {
         // المسافات والرموز تُضاف للجزء السابق إذا كان محايداً
@@ -124,11 +124,11 @@ export const processArabicMixedText = (text: string): string => {
         }
         currentSegment = '';
       }
-      
+
       currentSegment += char;
       currentType = charType;
     }
-    
+
     // أضف الجزء الأخير
     if (currentSegment !== '') {
       if (currentType === 'neutral' && segments.length > 0) {
@@ -137,7 +137,7 @@ export const processArabicMixedText = (text: string): string => {
         segments.push({ text: currentSegment, type: currentType });
       }
     }
-    
+
     // معالجة كل جزء حسب نوعه
     const processedSegments = segments.map(segment => {
       if (segment.type === 'arabic') {
@@ -149,10 +149,9 @@ export const processArabicMixedText = (text: string): string => {
         return segment.text;
       }
     });
-    
+
     // عكس ترتيب الأجزاء للحصول على ترتيب RTL صحيح
     return processedSegments.reverse().join('');
-    
   } catch (error) {
     console.error('Error processing mixed text:', error);
     return text;
@@ -164,7 +163,7 @@ export const processArabicMixedText = (text: string): string => {
  */
 export const processSimpleArabic = (text: string): string => {
   if (!text || !containsArabic(text)) return text;
-  
+
   try {
     const reshaped = ArabicReshaper.reshape(text);
     return reverseString(reshaped);

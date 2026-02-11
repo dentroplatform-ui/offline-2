@@ -1,19 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#4f46e5"/>
       <stop offset="100%" style="stop-color:#7c3aed"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="100" fill="url(#grad)"/>
-  <g fill="white">
-    <!-- Pill icon -->
-    <ellipse cx="256" cy="180" rx="80" ry="50" fill="white" opacity="0.9"/>
-    <ellipse cx="256" cy="180" rx="60" ry="35" fill="#4f46e5"/>
-    <rect x="176" y="180" width="160" height="100" rx="50" fill="white" opacity="0.9"/>
-    <line x1="256" y1="140" x2="256" y2="280" stroke="#4f46e5" stroke-width="4"/>
-    
-    <!-- Rx text -->
-    <text x="256" y="400" font-family="serif" font-size="140" font-weight="bold" font-style="italic" text-anchor="middle" fill="white">Rx</text>
-  </g>
+  <rect width="100" height="100" rx="20" fill="url(#bg)"/>
+  <text x="50" y="65" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle">Rx</text>
 </svg>

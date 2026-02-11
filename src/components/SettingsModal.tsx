@@ -1,13 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  X, ArrowLeft, Settings, Image, Layout, Pill, Trash2, 
-  Upload, AlignLeft, Bold, Minus, FileStack, 
-  Eye, Plus, FileText, Folder, Download, UploadCloud, 
-  RefreshCw, CheckCircle, AlertTriangle, HardDrive
-} from 'lucide-react';
+import { X, ArrowLeft, Settings, Image, Layout, Pill, Trash2, Upload, AlignLeft, Bold, Minus, FileStack, Eye, Plus, FileText, Folder, Download, UploadCloud, RefreshCw, CheckCircle, AlertTriangle, HardDrive, User, LogOut, Palette, Check } from 'lucide-react';
 import { translations } from '../i18n';
 import { Language, AppSettings, TextStyleConfig, LineStyleConfig, Medication, MedicationCategory, Prescription } from '../types';
 import { generateId } from '../utils/helpers';
+import { themes, Theme } from '../hooks/useTheme';
 
 interface SettingsModalProps {
   show: boolean;
@@ -25,63 +21,66 @@ interface SettingsModalProps {
   onSetLanguage: (lang: Language) => void;
   onRestorePrescriptions: (prescriptions: Prescription[]) => Promise<void>;
   onClearPrescriptions: () => Promise<void>;
+  // New props for account and themes
+  subscriptionExpiresAt?: string;
+  userEmail?: string;
+  onLogout?: () => void;
+  currentThemeId?: string;
+  onSetTheme?: (themeId: string) => void;
 }
 
-type SettingsView = 
-  | 'menu' 
-  | 'language' 
-  | 'manage_meds' 
-  | 'upload_bg' 
-  | 'paper_size' 
-  | 'spacing' 
-  | 'style_meds' 
-  | 'style_rx' 
-  | 'style_header_info' 
+type SettingsView =
+  | 'menu'
+  | 'language'
+  | 'manage_meds'
+  | 'upload_bg'
+  | 'paper_size'
+  | 'spacing'
+  | 'style_meds'
+  | 'style_rx'
+  | 'style_header_info'
   | 'style_header_line'
-  | 'backup';
+  | 'backup'
+  | 'account'
+  | 'themes';
 
-const StyleEditor = ({ 
-  config, 
-  onChange, 
-  label, 
-  t 
-}: { 
-  config: TextStyleConfig; 
-  onChange: (c: TextStyleConfig) => void; 
-  label: string; 
+const StyleEditor = ({ config, onChange, label, t }: {
+  config: TextStyleConfig;
+  onChange: (c: TextStyleConfig) => void;
+  label: string;
   t: any;
 }) => {
   return (
-    <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
+    <div className="bg-gray-50 dark:bg-gray-900/50 p-5 rounded-2xl space-y-4">
       <h4 className="font-bold text-gray-700 dark:text-gray-200 mb-3 text-sm uppercase flex items-center gap-2">
         <AlignLeft size={16} /> {label}
       </h4>
       <div className="flex flex-wrap gap-4 items-center">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-bold text-gray-500">{t.fontSize}</label>
-          <input 
-            type="number" 
-            value={config.fontSize} 
-            onChange={(e) => onChange({...config, fontSize: parseInt(e.target.value)})} 
-            className="w-16 p-2 rounded-lg border dark:bg-gray-800 dark:text-white outline-none text-center" 
+          <input
+            type="number"
+            value={config.fontSize}
+            onChange={(e) => onChange({ ...config, fontSize: parseInt(e.target.value) })}
+            className="w-16 p-2 rounded-lg border dark:bg-gray-800 dark:text-white outline-none text-center"
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs font-bold text-gray-500">{t.textColor}</label>
           <div className="flex items-center gap-2">
-            <input 
-              type="color" 
-              value={config.color} 
-              onChange={(e) => onChange({...config, color: e.target.value})} 
-              className="w-8 h-8 rounded cursor-pointer border-none bg-transparent" 
+            <input
+              type="color"
+              value={config.color}
+              onChange={(e) => onChange({ ...config, color: e.target.value })}
+              className="w-8 h-8 rounded cursor-pointer border-none bg-transparent"
             />
             <span className="text-xs font-mono text-gray-500">{config.color}</span>
           </div>
         </div>
         <div className="flex gap-2 mt-auto">
-          <button 
-            type="button" 
-            onClick={() => onChange({...config, isBold: !config.isBold})} 
+          <button
+            type="button"
+            onClick={() => onChange({ ...config, isBold: !config.isBold })}
             className={`p-2 rounded-lg border flex items-center gap-1 ${config.isBold ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600'}`}
           >
             <Bold size={16} /> <span className="text-xs font-bold">{t.bold}</span>
@@ -89,9 +88,9 @@ const StyleEditor = ({
         </div>
       </div>
       <div className="mt-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 flex justify-center items-center h-16 overflow-hidden">
-        <span style={{ 
-          fontSize: `${config.fontSize}px`, 
-          color: config.color, 
+        <span style={{
+          fontSize: `${config.fontSize}px`,
+          color: config.color,
           fontWeight: config.isBold ? 'bold' : 'normal'
         }}>
           Preview Text
@@ -101,19 +100,14 @@ const StyleEditor = ({
   );
 };
 
-const LineStyleEditor = ({ 
-  config, 
-  onChange, 
-  label, 
-  t 
-}: { 
-  config: LineStyleConfig; 
-  onChange: (c: LineStyleConfig) => void; 
-  label: string; 
+const LineStyleEditor = ({ config, onChange, label, t }: {
+  config: LineStyleConfig;
+  onChange: (c: LineStyleConfig) => void;
+  label: string;
   t: any;
 }) => {
   return (
-    <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
+    <div className="bg-gray-50 dark:bg-gray-900/50 p-5 rounded-2xl space-y-4">
       <h4 className="font-bold text-gray-700 dark:text-gray-200 mb-3 text-sm uppercase flex items-center gap-2">
         <Minus size={16} /> {label}
       </h4>
@@ -121,11 +115,11 @@ const LineStyleEditor = ({
         <div className="flex flex-col gap-1">
           <label className="text-xs font-bold text-gray-500">{t.textColor}</label>
           <div className="flex items-center gap-2">
-            <input 
-              type="color" 
-              value={config.color} 
-              onChange={(e) => onChange({...config, color: e.target.value})} 
-              className="w-8 h-8 rounded cursor-pointer border-none bg-transparent" 
+            <input
+              type="color"
+              value={config.color}
+              onChange={(e) => onChange({ ...config, color: e.target.value })}
+              className="w-8 h-8 rounded cursor-pointer border-none bg-transparent"
             />
             <span className="text-xs font-mono text-gray-500">{config.color}</span>
           </div>
@@ -133,14 +127,14 @@ const LineStyleEditor = ({
         <div className="flex flex-col gap-1">
           <label className="text-xs font-bold text-gray-500">{t.lineThickness}</label>
           <div className="flex items-center gap-3">
-            <input 
-              type="range" 
-              min="0.5" 
-              max="10" 
-              step="0.5" 
-              value={config.thickness} 
-              onChange={(e) => onChange({...config, thickness: parseFloat(e.target.value)})} 
-              className="w-24 accent-indigo-600" 
+            <input
+              type="range"
+              min="0.5"
+              max="10"
+              step="0.5"
+              value={config.thickness}
+              onChange={(e) => onChange({ ...config, thickness: parseFloat(e.target.value) })}
+              className="w-24 accent-indigo-600"
             />
             <span className="text-xs font-bold text-gray-700 dark:text-white">{config.thickness} pt</span>
           </div>
@@ -148,14 +142,14 @@ const LineStyleEditor = ({
         <div className="flex flex-col gap-1">
           <label className="text-xs font-bold text-gray-500">{t.lineStyle}</label>
           <div className="flex bg-white dark:bg-gray-800 p-1 rounded-lg border dark:border-gray-600">
-            <button 
-              onClick={() => onChange({...config, style: 'solid'})} 
+            <button
+              onClick={() => onChange({ ...config, style: 'solid' })}
               className={`px-3 py-1 text-xs font-bold rounded ${config.style === 'solid' ? 'bg-indigo-600 text-white shadow' : 'text-gray-500'}`}
             >
               {t.solid}
             </button>
-            <button 
-              onClick={() => onChange({...config, style: 'dashed'})} 
+            <button
+              onClick={() => onChange({ ...config, style: 'dashed' })}
               className={`px-3 py-1 text-xs font-bold rounded ${config.style === 'dashed' ? 'bg-indigo-600 text-white shadow' : 'text-gray-500'}`}
             >
               {t.dashed}
@@ -164,10 +158,10 @@ const LineStyleEditor = ({
         </div>
       </div>
       <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 flex flex-col justify-center gap-2">
-        <div 
-          style={{ 
-            height: config.thickness, 
-            backgroundColor: config.style === 'dashed' ? 'transparent' : config.color, 
+        <div
+          style={{
+            height: config.thickness,
+            backgroundColor: config.style === 'dashed' ? 'transparent' : config.color,
             width: '100%',
             borderBottom: config.style === 'dashed' ? `${config.thickness}px dashed ${config.color}` : 'none'
           }}
@@ -194,23 +188,28 @@ export function SettingsModal({
   onSetLanguage,
   onRestorePrescriptions,
   onClearPrescriptions,
+  subscriptionExpiresAt,
+  userEmail,
+  onLogout,
+  currentThemeId,
+  onSetTheme,
 }: SettingsModalProps) {
   const t = translations[language];
   const isRTL = language === 'ar' || language === 'ku';
-  
+
   const [currentView, setCurrentView] = useState<SettingsView>('menu');
   const [rxSymbolConfig, setRxSymbolConfig] = useState<TextStyleConfig>(settings.rxTemplate.rxSymbol);
   const [medsConfig, setMedsConfig] = useState<TextStyleConfig>(settings.rxTemplate.medications);
   const [headerInfoConfig, setHeaderInfoConfig] = useState<TextStyleConfig>(settings.rxTemplate.headerInfo);
   const [headerLineConfig, setHeaderLineConfig] = useState<LineStyleConfig>(settings.rxTemplate.headerLine);
-  const [topMargin, setTopMargin] = useState<number>(settings.rxTemplate.topMargin);
+  const [topMargin, setTopMargin] = useState(settings.rxTemplate.topMargin);
   const [paperSize, setPaperSize] = useState<'A4' | 'A5'>(settings.rxTemplate.paperSize);
-  
+
   // Medication management
   const [newMedForm, setNewMedForm] = useState<Partial<Medication>>({ name: '', dose: '', form: '', frequency: '', notes: '', categoryId: '' });
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isAddingMed, setIsAddingMed] = useState(false);
-  
+
   // Backup states
   const [showRestoreOptions, setShowRestoreOptions] = useState(false);
   const [showBackupTypeChoice, setShowBackupTypeChoice] = useState(false);
@@ -283,11 +282,11 @@ export function SettingsModal({
   };
 
   const MenuCard = ({ title, icon: Icon, onClick, colorClass }: any) => (
-    <button 
-      onClick={onClick} 
+    <button
+      onClick={onClick}
       className={`flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-transparent transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white dark:bg-gray-700/50 shadow-sm group ${colorClass}`}
     >
-      <div className="w-12 h-12 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-current/10 mb-3 group-hover:scale-110 transition-transform">
         <Icon size={24} className="opacity-80" />
       </div>
       <span className="font-bold text-gray-800 dark:text-white text-center text-xs">{title}</span>
@@ -295,8 +294,8 @@ export function SettingsModal({
   );
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-      <div 
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div
         className={`bg-gray-50 dark:bg-gray-800 w-full max-w-2xl rounded-[2rem] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden ${isRTL ? 'font-cairo' : 'font-inter'}`}
         dir={isRTL ? 'rtl' : 'ltr'}
       >
@@ -320,6 +319,8 @@ export function SettingsModal({
               {currentView === 'style_header_info' && t.headerInfoStyle}
               {currentView === 'style_header_line' && t.headerLineStyle}
               {currentView === 'backup' && t.backup}
+              {currentView === 'account' && t.accountSettings}
+              {currentView === 'themes' && t.themes}
             </h3>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition">
@@ -342,6 +343,91 @@ export function SettingsModal({
               <MenuCard title={t.medsTextStyle} icon={AlignLeft} onClick={() => setCurrentView('style_meds')} colorClass="hover:border-teal-200 text-teal-600" />
               <MenuCard title={t.rxSymbolStyle} icon={AlignLeft} onClick={() => setCurrentView('style_rx')} colorClass="hover:border-orange-200 text-orange-600" />
               <MenuCard title={t.backup} icon={HardDrive} onClick={() => setCurrentView('backup')} colorClass="hover:border-emerald-200 text-emerald-600" />
+              <MenuCard title={t.themes} icon={Palette} onClick={() => setCurrentView('themes')} colorClass="hover:border-pink-200 text-pink-600" />
+              <MenuCard title={t.accountSettings} icon={User} onClick={() => setCurrentView('account')} colorClass="hover:border-red-200 text-red-600" />
+            </div>
+          )}
+
+          {/* Account Settings */}
+          {currentView === 'account' && (
+            <div className="space-y-6">
+              {/* User Info */}
+              <div className="bg-white dark:bg-gray-700 p-6 rounded-2xl border border-gray-100 dark:border-gray-600">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-full flex items-center justify-center">
+                    <User size={32} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-800 dark:text-white text-lg">{userEmail || '-'}</h4>
+                    <p className="text-sm text-gray-500">{isRTL ? 'الحساب المسجل' : 'Registered Account'}</p>
+                  </div>
+                </div>
+
+                {/* Subscription Info */}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-300 font-medium">{t.subscriptionExpiresAt}</span>
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                      {subscriptionExpiresAt 
+                        ? new Date(subscriptionExpiresAt).toLocaleDateString(language === 'en' ? 'en-GB' : 'ar-EG', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })
+                        : '-'
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                {/* Logout Button */}
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="w-full py-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition flex items-center justify-center gap-3"
+                  >
+                    <LogOut size={20} />
+                    {t.logout}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Themes */}
+          {currentView === 'themes' && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                {isRTL ? 'اختر ثيم لتغيير ألوان التطبيق' : 'Choose a theme to change app colors'}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {themes.map((theme: Theme) => (
+                  <button
+                    key={theme.id}
+                    onClick={() => onSetTheme?.(theme.id)}
+                    className={`p-4 rounded-2xl border-2 transition-all hover:shadow-lg ${
+                      currentThemeId === theme.id
+                        ? 'border-gray-800 dark:border-white shadow-lg'
+                        : 'border-transparent hover:border-gray-300'
+                    }`}
+                    style={{ backgroundColor: theme.colors.primaryLight }}
+                  >
+                    <div className="flex gap-1 mb-3">
+                      <div className="w-6 h-6 rounded-full" style={{ backgroundColor: theme.colors.primary }} />
+                      <div className="w-6 h-6 rounded-full" style={{ backgroundColor: theme.colors.secondary }} />
+                      <div className="w-6 h-6 rounded-full" style={{ backgroundColor: theme.colors.accent }} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm" style={{ color: theme.colors.text }}>
+                        {language === 'ar' ? theme.nameAr : language === 'ku' ? theme.nameKu : theme.name}
+                      </span>
+                      {currentThemeId === theme.id && (
+                        <Check size={16} style={{ color: theme.colors.primary }} />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -353,8 +439,8 @@ export function SettingsModal({
                   key={lang}
                   onClick={() => { onSetLanguage(lang); setCurrentView('menu'); }}
                   className={`w-full p-4 rounded-xl border-2 transition-all flex items-center justify-between ${
-                    language === lang 
-                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' 
+                    language === lang
+                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
                       : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 hover:border-indigo-300'
                   }`}
                 >
@@ -425,31 +511,31 @@ export function SettingsModal({
                     <div className="grid grid-cols-2 gap-3">
                       <input
                         value={newMedForm.name}
-                        onChange={e => setNewMedForm({...newMedForm, name: e.target.value})}
+                        onChange={e => setNewMedForm({ ...newMedForm, name: e.target.value })}
                         placeholder={t.drugName}
                         className="col-span-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 outline-none font-medium"
                       />
                       <input
                         value={newMedForm.dose}
-                        onChange={e => setNewMedForm({...newMedForm, dose: e.target.value})}
+                        onChange={e => setNewMedForm({ ...newMedForm, dose: e.target.value })}
                         placeholder={t.dose}
                         className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 outline-none font-medium"
                       />
                       <input
                         value={newMedForm.form}
-                        onChange={e => setNewMedForm({...newMedForm, form: e.target.value})}
+                        onChange={e => setNewMedForm({ ...newMedForm, form: e.target.value })}
                         placeholder={t.form}
                         className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 outline-none font-medium"
                       />
                       <input
                         value={newMedForm.frequency}
-                        onChange={e => setNewMedForm({...newMedForm, frequency: e.target.value})}
+                        onChange={e => setNewMedForm({ ...newMedForm, frequency: e.target.value })}
                         placeholder={t.frequency}
                         className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 outline-none font-medium"
                       />
                       <select
                         value={newMedForm.categoryId}
-                        onChange={e => setNewMedForm({...newMedForm, categoryId: e.target.value})}
+                        onChange={e => setNewMedForm({ ...newMedForm, categoryId: e.target.value })}
                         className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 outline-none font-medium"
                       >
                         <option value="">{t.selectCategory}</option>
@@ -578,18 +664,18 @@ export function SettingsModal({
                   <h4 className="font-bold text-gray-800 dark:text-white">{t.topMargin}</h4>
                   <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-mono font-bold">{topMargin} pt</span>
                 </div>
-                <input 
-                  type="range" 
-                  min="50" 
-                  max="300" 
-                  step="5" 
-                  value={topMargin} 
-                  onChange={(e) => setTopMargin(parseInt(e.target.value))} 
-                  className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-indigo-600 mb-8" 
+                <input
+                  type="range"
+                  min="50"
+                  max="300"
+                  step="5"
+                  value={topMargin}
+                  onChange={(e) => setTopMargin(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-indigo-600 mb-8"
                 />
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-500 rounded-xl p-4 relative min-h-[200px] bg-gray-50 dark:bg-gray-800 overflow-hidden">
-                  <div 
-                    className="bg-indigo-100 dark:bg-indigo-900/40 border-b-2 border-indigo-300 dark:border-indigo-700 flex items-center justify-center transition-all duration-300" 
+                  <div
+                    className="bg-indigo-100 dark:bg-indigo-900/40 border-b-2 border-indigo-300 dark:border-indigo-700 flex items-center justify-center transition-all duration-300"
                     style={{ height: `${topMargin / 2}px` }}
                   >
                     <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">{t.headerSpacing}</span>
@@ -645,8 +731,8 @@ export function SettingsModal({
               {/* Success/Error Message */}
               {backupMessage && (
                 <div className={`p-4 rounded-xl flex items-center gap-3 animate-fade-in ${
-                  backupMessage.type === 'success' 
-                    ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' 
+                  backupMessage.type === 'success'
+                    ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
                     : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
                 }`}>
                   {backupMessage.type === 'success' ? <CheckCircle size={20} /> : <AlertTriangle size={20} />}
@@ -783,7 +869,7 @@ export function SettingsModal({
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    
+
                     const reader = new FileReader();
                     reader.onload = (event) => {
                       try {
@@ -818,7 +904,7 @@ export function SettingsModal({
                     {/* Show what type of backup was detected */}
                     <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
                       <span className="text-xs font-bold text-gray-500 uppercase">
-                        {pendingRestoreData?.type === 'prescriptions' 
+                        {pendingRestoreData?.type === 'prescriptions'
                           ? (isRTL ? 'ملف وصفات' : 'Prescriptions Backup')
                           : (isRTL ? 'ملف إعدادات' : 'Settings Backup')
                         }
@@ -826,12 +912,12 @@ export function SettingsModal({
                     </div>
 
                     <h5 className="font-bold text-gray-700 dark:text-gray-200 text-center">{t.chooseRestoreMethod}</h5>
-                    
+
                     {/* Replace Option */}
                     <button
                       onClick={async () => {
                         if (!pendingRestoreData) return;
-                        
+
                         if (pendingRestoreData.type === 'prescriptions') {
                           // Restore prescriptions - replace
                           await onClearPrescriptions();
@@ -846,7 +932,7 @@ export function SettingsModal({
                           for (const cat of categories) {
                             await onDeleteCategory(cat.id);
                           }
-                          
+
                           if (pendingRestoreData.medicationCategories) {
                             for (const cat of pendingRestoreData.medicationCategories) {
                               await onAddCategory(cat);
@@ -861,7 +947,7 @@ export function SettingsModal({
                             onUpdateSettings({ rxTemplate: pendingRestoreData.settings.rxTemplate });
                           }
                         }
-                        
+
                         setShowRestoreOptions(false);
                         setPendingRestoreData(null);
                         setBackupMessage({ type: 'success', text: t.restoreSuccess });
@@ -882,7 +968,7 @@ export function SettingsModal({
                     <button
                       onClick={async () => {
                         if (!pendingRestoreData) return;
-                        
+
                         if (pendingRestoreData.type === 'prescriptions') {
                           // Restore prescriptions - merge
                           if (pendingRestoreData.prescriptions) {
@@ -909,7 +995,7 @@ export function SettingsModal({
                             }
                           }
                         }
-                        
+
                         setShowRestoreOptions(false);
                         setPendingRestoreData(null);
                         setBackupMessage({ type: 'success', text: t.restoreSuccess });
