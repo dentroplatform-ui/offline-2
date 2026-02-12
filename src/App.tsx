@@ -87,31 +87,16 @@ export function App() {
     };
   }, []);
 
-  // Register service worker
+
+
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('Service Worker registered:', registration);
-          setSwRegistered(true);
-
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('New version available');
-                }
-              });
-            }
-          });
-        })
-        .catch((err) => {
-          console.error('Service Worker registration failed:', err);
-        });
+      navigator.serviceWorker.ready.then(() => {
+        setSwRegistered(true);
+      });
     }
   }, []);
+
 
   // Pre-cache fonts when online
   useEffect(() => {
