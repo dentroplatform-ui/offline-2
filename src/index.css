@@ -3,6 +3,27 @@
 /* Enable dark mode with class strategy for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ========== حل مشكلة توافق الشاشات ========== */
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+}
+
+body {
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+  width: 100%;
+}
+/* ============================================= */
+
 /* Theme CSS Variables */
 :root {
   --theme-primary: #4f46e5;
@@ -142,7 +163,7 @@ html.dark {
 
 /* PWA safe areas */
 @supports (padding-top: env(safe-area-inset-top)) {
-  body {
+  #root {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
